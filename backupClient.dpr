@@ -9,7 +9,6 @@ uses
   mainUnit in 'mainUnit.pas' {DataModule1: TDataModule},
   varsUnit in 'varsUnit.pas',
   messageExecute in 'messageExecute.pas',
-  regularUnit in 'regularUnit.pas',
   functionsUnit in 'functionsUnit.pas',
   filesUnit in 'filesUnit.pas';
 
