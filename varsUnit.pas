@@ -2,7 +2,7 @@ unit varsUnit;
 
 interface
 
-uses myconfig.ini, myconfig.Logs;
+uses myconfig.ini, myconfig.Logs, IdFTP;
 
 const
   allOk = 0;
@@ -16,8 +16,9 @@ var
   ini : TConfigs;
   log : TLogsSaveClasses;
   terminatedAll : boolean = false;
-  secretKey : string;
-  nameClient : string;
+  secretKey   : string;
+  nameClient  : string;
+  FTP         : TIdFTP;
  // IdTCPClient1: TIdTCPClient;
 
 implementation
