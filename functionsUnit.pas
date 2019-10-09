@@ -7,8 +7,31 @@ uses
 
 
 function foundFiles(dir: string) : TStringList;
+function GetSubDirectories(Dir : string): TStringList;
 
 implementation
+
+function GetSubDirectories(Dir : string): TStringList;
+var
+  i : Integer;
+  tempstr : string;
+begin
+  Result := TStringList.Create;
+  Result.Clear;
+  tempstr := '';
+  for I := 1 to length(Dir) do
+  begin
+    if Dir[i] = '/' then
+    begin
+      Result.Add(tempstr);
+      tempstr := '';
+    end else
+    begin
+      tempstr := tempstr + Dir[i];
+    end;
+  end;
+ // Result.Add(tempstr);
+end;
 
 function foundFiles(dir: string) : TStringList;
 var

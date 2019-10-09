@@ -10,7 +10,8 @@ uses
   varsUnit in 'varsUnit.pas',
   messageExecute in 'messageExecute.pas',
   functionsUnit in 'functionsUnit.pas',
-  filesUnit in 'filesUnit.pas';
+  filesUnit in 'filesUnit.pas',
+  AWSUnit in 'AWSUnit.pas';
 
 begin
   try

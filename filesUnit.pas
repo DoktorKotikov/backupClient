@@ -11,6 +11,11 @@ type
   end;
   TAFileDirAndName = array of TFileDirAndName;
 
+  TSendConfig = record
+    Host, Username, Password : string;
+    Port, DataPort : Integer;
+  end;
+
   TJobConf = class
   private
     fdirout  : string;
@@ -32,14 +37,18 @@ type
     Jobs : TDictionary<string, TJobConf>;
 
   public
+    SendConfig : TSendConfig;
     constructor Create();
     procedure AddNewFile(Dir, FileName : string; dirout : string; archivate : boolean);
     function  GetCount : integer;
     function  GetJob(index : integer) : TJobConf;
   end;
 
+
+
 //var
  // AllJobs : TAllJobs;
+
 
 implementation
 
@@ -78,6 +87,7 @@ constructor TAllJobs.Create();
 begin
   Jobs := TDictionary<string, TJobConf>.Create();
 end;
+
 
 procedure TAllJobs.AddNewFile(Dir, FileName : string; dirout : string; archivate : boolean);
 var

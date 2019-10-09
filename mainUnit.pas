@@ -5,12 +5,18 @@ interface
 uses
   System.SysUtils, System.Classes, myconfig.ini, IdBaseComponent, IdComponent,
   IdTCPConnection, IdTCPClient, varsUnit, myconfig.Logs, messageExecute,
-  IdExplicitTLSClientServerBase, IdFTP;
+  IdExplicitTLSClientServerBase, IdFTP, System.JSON;
 
 type
   TDataModule1 = class(TDataModule)
-    IdTCPClient1: TIdTCPClient;
+    TCPClient: TIdTCPClient;
     procedure DataModuleCreate(Sender: TObject);
+    procedure TCPClientConnected(Sender: TObject);
+    procedure TCPClientDisconnected(Sender: TObject);
+    procedure TCPClientStatus(ASender: TObject; const AStatus: TIdStatus;
+      const AStatusText: string);
+    procedure TCPClientWork(ASender: TObject; AWorkMode: TWorkMode;
+      AWorkCount: Int64);
 
   private
     { Private declarations }
@@ -26,112 +32,129 @@ implementation
 {%CLASSGROUP 'System.Classes.TPersistent'}
 
 {$R *.dfm}
+procedure OnConnect1();
+begin
+
+end;
+
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
 var
+  JS  : TJSONObject;
   msg : string;
   trycoun   : integer;
   f:TFileStream;
   FileNameFrom:string;
   PathTo:string;
+  action, jobId, resultate : string;
 
+  JSparse : TJSONObject;
+
+  resultCode : string;
 begin
-  FTP     := TIdFTP.create;
+  //TCPClient    := TIdTCPClient.Create;
   terminatedAll := False;
   ini := TConfigs.Create('config.ini');
   log := TLogsSaveClasses.Create();
   secretKey := ini.GetValue('socket', 'key').AsString;
   nameClient := ini.GetValue_OrSetDefoult('socket', 'name', 'testClient').AsString;
 
-  FTP.Host:=ini.GetValue_OrSetDefoult('FTPS', 'ip', '127.0.0.1').AsString;
-  FTP.Port:=ini.GetValue_OrSetDefoult('FTPS', 'port', '20').AsInteger;
-  FTP.DataPort:=ini.GetValue_OrSetDefoult('FTPS', 'dataport', '21').AsInteger;
-  FTP.Username := ini.GetValue_OrSetDefoult('FTPS', 'username', 'username').AsString;
-  FTP.Password := ini.GetValue_OrSetDefoult('FTPS', 'pass', 'password').AsString;
 
- trycoun := 0; //определяем счетчик подкючений как ноль
-  repeat//выполнеям пока соединение открыто
-    try//пробуем выполнить try
-      FTP.Connect;//коннектимся к серверу
-      FTP.Login;
-      log.SaveLog('Connect to ' +FTP.Host);
-      FTP.Put('','');
-      trycoun := 0; //определяем счетчик подкючений как ноль
-
-      repeat //повторять пока соединение открыто
-        msg := FTP.Socket.ReadLn;//определяем msg как одну принятую строку
-        log.SaveLog(msg);
-        if msg <> '' then newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
-        {
-      FileNameFrom:='C:\test\11121.txt';
-      PathTo:= 'c:\';
-      begin
-          f:=TFileStream.Create(FileNameFrom,fmOpenRead);
-           try
-            IdFTP1.ChangeDir(PathTo);
-            idftp1.Put(f,PathTo+ExtractFileName(FileNameFrom));
-            log.SaveLog('File '+FileNameFrom+ ' will be put');
-           except
-            log.SaveLog('Error, file '+FileNameFrom+' dont put');
-           end;
-            f.Free;
-      end;
-      }
-
-      until terminatedAll;
-
-    except //выполняем, если словили ошибку в try
-      Inc(trycoun);//прибавляем счетчик подключений
-      Sleep(1000 * trycoun);//спим
-   //   if trycoun > 100 then terminatedAll := True;
-
-      try//отрубаемся от серва, чтобы не было повторного подключения
-        FTP.Disconnect;
-      except
-      end;
-    end;
-  until terminatedAll;
-  FTP.Disconnect;
-  FTP.Free;
-
-//  IdTCPClient1 := TIdTCPClient.Create;//создаем TIdTCPClient
-
-
-
-
-
-  IdTCPClient1.Host := ini.GetValue_OrSetDefoult('socket', 'ip', '127.0.0.1').AsString;//записываем хост клиента
-  IdTCPClient1.Port := ini.GetValue_OrSetDefoult('socket', 'port', '80').AsInteger;//записываем порт клиента
-
+  TCPClient.Host := ini.GetValue_OrSetDefoult('socket', 'ip', '127.0.0.1').AsString;//записываем хост клиента
+  TCPClient.Port := ini.GetValue_OrSetDefoult('socket', 'port', '80').AsInteger;//записываем порт клиента
   trycoun := 0; //определяем счетчик подкючений как ноль
+  TCPClient.Connect;//коннектимся к серверу
+ // Sleep(3000);
   repeat//выполнеям пока соединение открыто
-    try//пробуем выполнить try
-      IdTCPClient1.Connect;//коннектимся к серверу
-      IdTCPClient1.Socket.WriteLn('{"action":"login","key":"'+ secretKey +'","name":"'+nameClient+'"}');//отправляем сообщение в хост (посылаем секретный ключ для проверки)
-      trycoun := 0; //определяем счетчик подкючений как ноль
-      repeat //повторять пока соединение открыто
-        //msg := IdTCPClient1.Socket.ReadLn;//определяем msg как одну принятую строку
-        //if msg <> '' then newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
+//    if TCPClient.Connected = false then TCPClient.Connect;
+  //  Sleep(1000);//спим
 
-      until terminatedAll;
-    except //выполняем, если словили ошибку в try
-      Inc(trycoun);//прибавляем счетчик подключений
-      Sleep(1000 * trycoun);//спим
-   //   if trycoun > 100 then terminatedAll := True;
+    msg := TCPClient.Socket.ReadLn(#10, 5000);
 
-      try//отрубаемся от серва, чтобы не было повторного подключения
-        IdTCPClient1.Disconnect;
-      except
+    //определяем msg как одну принятую строку
+    if msg <> '' then
+    begin
+      resultCode := newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
+      try
+        jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
+        JS := nil;
+
+        try
+          //JS := TJSONObject.Create;//  ParseJSONValue(msgForJson) as TJSONObject;
+          //if jsparse.TryGetValue('action', action) then JS.AddPair('action', action);
+          //if jsparse.TryGetValue('jobId', jobId) then JS.AddPair('jobId', 'jobResult');
+          //JS.AddPair('result', TJSONNumber.Create(resultCode));
+          //JS.AddPair('msg', msg);
+
+          //log.SaveLog(JS.ToJSON);
+          TCPClient.Socket.WriteLn(resultCode);
+        finally
+          if JS <> nil then JS.Free;
+        end;
+      finally
+        jsparse.free;
       end;
+
     end;
+
   until terminatedAll;
 
-
-  IdTCPClient1.Disconnect;
-  IdTCPClient1.Free;
+  TCPClient.Disconnect;
     //чистим клиента
 end;
 
 
+
+procedure TDataModule1.TCPClientConnected(Sender: TObject);
+var
+  msg : string;
+  resultCode : integer;
+  JS  : TJSONObject;//  ParseJSONValue(msgForJson) as TJSONObject;
+begin
+
+  TCPClient.Socket.WriteLn('{"action":"login","key":"'+ secretKey +'","name":"'+nameClient+'"}');//отправляем сообщение в хост (посылаем секретный ключ для проверки)
+  msg := TCPClient.Socket.ReadLn;
+  JS  := nil;
+  try
+    JS := TJSONObject.ParseJSONValue(msg) as TJSONObject;
+    if (JS.TryGetValue('action', msg) = True) then
+    if msg = 'login' then
+    if (JS.TryGetValue('result', resultCode) = True) then
+    log.SaveLog('Attempt to connecting to TCPServer : '+ TCPClient.Host);
+    begin
+      if resultCode = 0 then
+      begin
+        log.SaveLog('[Success] ТСРClient connecting to TCPServer : '+ TCPClient.Host);
+      end else
+      begin
+        msg := '';
+        JS.TryGetValue('error', msg);
+        log.SaveLog('[Error] Connecting to TCPServer with code:' + resultCode.ToString +', '+ msg);
+      end;
+    end;
+  finally
+    if JS <> nil then JS.Free;
+  end;
+end;
+
+procedure TDataModule1.TCPClientDisconnected(Sender: TObject);
+begin
+  log.SaveLog('[Attention] Disconnected to TCPServer: '+ TCPClient.Host);
+  Sleep(3000);
+  TCPClient.Connect;
+
+end;
+
+procedure TDataModule1.TCPClientStatus(ASender: TObject;
+  const AStatus: TIdStatus; const AStatusText: string);
+begin
+  Sleep(0);
+end;
+
+procedure TDataModule1.TCPClientWork(ASender: TObject; AWorkMode: TWorkMode;
+  AWorkCount: Int64);
+begin
+  Sleep(0);
+end;
 
 end.
