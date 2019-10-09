@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5CF7454E-750E-4BCF-AA07-1855FAE727FF}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="backupClient.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="backupClientService.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="backupClient">
+        <MSBuild Projects="backupClient.dproj"/>
+    </Target>
+    <Target Name="backupClient:Clean">
+        <MSBuild Projects="backupClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="backupClient:Make">
+        <MSBuild Projects="backupClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="backupClientService">
+        <MSBuild Projects="backupClientService.dproj"/>
+    </Target>
+    <Target Name="backupClientService:Clean">
+        <MSBuild Projects="backupClientService.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="backupClientService:Make">
+        <MSBuild Projects="backupClientService.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="backupClient;backupClientService"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="backupClient:Clean;backupClientService:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="backupClient:Make;backupClientService:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
