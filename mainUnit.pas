@@ -24,24 +24,67 @@ type
     { Public declarations }
   end;
 
+  TMainThead = class(TThread)
+    public
+//      constructor Create();
+    protected
+      procedure Execute; override;
+  end;
+
+
 var
   DataModule1: TDataModule1;
 
 implementation
 
+procedure TMainThead.Execute;
+var
+  msg : string;
+  test : TNewMessage;
+begin
+  repeat//выполнеям пока соединение открыто
+//    if TCPClient.Connected = false then TCPClient.Connect;
+  //  Sleep(1000);//спим
+
+    msg := DataModule1.TCPClient.Socket.ReadLn(#10, 5000);
+
+    //определяем msg как одну принятую строку
+    if msg <> '' then
+    begin
+      test := TNewMessage.Create(msg, DataModule1.TCPClient);
+   {   resultCode := newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
+      try
+        jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
+        JS := nil;
+
+        try
+          //JS := TJSONObject.Create;//  ParseJSONValue(msgForJson) as TJSONObject;
+          //if jsparse.TryGetValue('action', action) then JS.AddPair('action', action);
+          //if jsparse.TryGetValue('jobId', jobId) then JS.AddPair('jobId', 'jobResult');
+          //JS.AddPair('result', TJSONNumber.Create(resultCode));
+          //JS.AddPair('msg', msg);
+
+          //log.SaveLog(JS.ToJSON);
+          TCPClient.Socket.WriteLn(resultCode);
+        finally
+          if JS <> nil then JS.Free;
+        end;
+      finally
+        jsparse.free;
+      end;
+             }
+    end;
+
+  until terminatedAll;
+end;
 {%CLASSGROUP 'System.Classes.TPersistent'}
 
 {$R *.dfm}
-procedure OnConnect1();
-begin
-
-end;
 
 
 procedure TDataModule1.DataModuleCreate(Sender: TObject);
 var
   JS  : TJSONObject;
-  msg : string;
   trycoun   : integer;
   f:TFileStream;
   FileNameFrom:string;
@@ -51,7 +94,7 @@ var
   JSparse : TJSONObject;
 
   resultCode : string;
-  test : TNewMessage;
+  mainThead : TMainThead;
 begin
   //TCPClient    := TIdTCPClient.Create;
   try
@@ -71,40 +114,8 @@ begin
     TCPClient.Connect;//коннектимся к серверу
     log.SaveLog('connected');
    // Sleep(3000);
-    repeat//выполнеям пока соединение открыто
-  //    if TCPClient.Connected = false then TCPClient.Connect;
-    //  Sleep(1000);//спим
 
-      msg := TCPClient.Socket.ReadLn(#10, 5000);
-
-      //определяем msg как одну принятую строку
-      if msg <> '' then
-      begin
-        test := TNewMessage.Create(msg, TCPClient);
-     {   resultCode := newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
-        try
-          jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
-          JS := nil;
-
-          try
-            //JS := TJSONObject.Create;//  ParseJSONValue(msgForJson) as TJSONObject;
-            //if jsparse.TryGetValue('action', action) then JS.AddPair('action', action);
-            //if jsparse.TryGetValue('jobId', jobId) then JS.AddPair('jobId', 'jobResult');
-            //JS.AddPair('result', TJSONNumber.Create(resultCode));
-            //JS.AddPair('msg', msg);
-
-            //log.SaveLog(JS.ToJSON);
-            TCPClient.Socket.WriteLn(resultCode);
-          finally
-            if JS <> nil then JS.Free;
-          end;
-        finally
-          jsparse.free;
-        end;
-               }
-      end;
-
-    until terminatedAll;
+    mainThead := TMainThead.Create;
 
   except on E: Exception do
     begin
