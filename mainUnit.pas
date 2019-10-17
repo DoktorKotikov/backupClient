@@ -69,6 +69,7 @@ begin
     trycoun := 0; //определяем счетчик подкючений как ноль
     log.SaveLog('try connect to server ' + TCPClient.Host);
     TCPClient.Connect;//коннектимся к серверу
+    log.SaveLog('connected');
    // Sleep(3000);
     repeat//выполнеям пока соединение открыто
   //    if TCPClient.Connected = false then TCPClient.Connect;

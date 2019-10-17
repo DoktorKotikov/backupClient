@@ -30,6 +30,6 @@ begin
   if not Application.DelayInitialize or Application.Installing then
     Application.Initialize;
   Application.CreateForm(TBackupAgent, BackupAgent);
-  Application.CreateForm(TDataModule1, DataModule1);
+//  Application.CreateForm(TDataModule1, DataModule1);
   Application.Run;
 end.
