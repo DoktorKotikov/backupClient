@@ -51,6 +51,7 @@ var
   JSparse : TJSONObject;
 
   resultCode : string;
+  test : TNewMessage;
 begin
   //TCPClient    := TIdTCPClient.Create;
   terminatedAll := False;
@@ -74,7 +75,8 @@ begin
     //определяем msg как одну принятую строку
     if msg <> '' then
     begin
-      resultCode := newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
+      test := TNewMessage.Create(msg, TCPClient);
+   {   resultCode := newMessage(msg); //если строка ответа не пустая, то выполняем функцию newMessage
       try
         jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
         JS := nil;
@@ -94,7 +96,7 @@ begin
       finally
         jsparse.free;
       end;
-
+             }
     end;
 
   until terminatedAll;

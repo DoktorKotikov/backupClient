@@ -8,6 +8,7 @@ uses
 type
   TService1 = class(TService)
     procedure ServiceCreate(Sender: TObject);
+    procedure ServiceExecute(Sender: TService);
   private
     { Private declarations }
   public
@@ -34,7 +35,16 @@ end;
 
 procedure TService1.ServiceCreate(Sender: TObject);
 begin
-  DataModule1:= TDataModule1.create;
+  DataModule1:= TDataModule1.create(nil);
+end;
+
+procedure TService1.ServiceExecute(Sender: TService);
+begin
+  While terminated = false  do
+  begin
+    WaitMessage;
+    ServiceThread.ProcessRequests(False);
+  end;
 end;
 
 end.

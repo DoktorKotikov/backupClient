@@ -9,9 +9,37 @@ uses varsUnit, System.Classes, System.JSON, System.sysutils,
 
 function newMessage(msg : string) : string;
 
+type
+
+  TNewMessage = class(TThread)
+    public
+      constructor Create(msg : string; TCPClient: TIdTCPClient);
+    protected
+      fmsg : string;
+      fTCPClient  : TIdTCPClient;
+      procedure Execute; override;
+  end;
+
 
 implementation
 
+
+constructor TNewMessage.Create(msg : string; TCPClient: TIdTCPClient);
+begin
+  inherited Create(false);
+  fmsg := msg;
+  fTCPClient := TCPClient;
+end;
+
+procedure TNewMessage.Execute;
+var
+  resultCode : string;
+begin
+  resultCode := newMessage(fmsg);
+  fTCPClient.Socket.WriteLn(resultCode);
+end;
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 function checkLoginAnswer(check : TJSONObject): Integer;
@@ -165,7 +193,7 @@ var
   request : string;
   action : string;
 
-  I, j, K    : Integer;
+  I, j, K, p    : Integer;
   boofNmb : Int64;
   boof    : Byte; // array [0 .. 0] of
   //idftp   : TIdFTP;
@@ -179,13 +207,16 @@ var
   tempDir : string;
 
   js_result : TJSONObject;
+
+  templ_str : string;
+  ftpfiles : TStringList;
 begin
   FTP := nil;
   js_result := nil;
   result := nil;
   result:=TJSONObject.Create;
   js_result:=TJSONObject.Create;
-
+  ftpfiles := TStringList.Create;
 
   try
     try
@@ -197,10 +228,9 @@ begin
       FTP.Password := Job.SendConfig.Password;
 
       count := Job.GetCount();
-
       for I := 0 to count-1 do
       begin
-  //    files := ;
+      //files := ;
         for j := 0 to Length(Job.GetJob(i).FileList)-1 do
         begin
           DirOut := Job.GetJob(i).GettDirOut;
@@ -233,8 +263,29 @@ begin
               end;
             end;
           end;
-          log.SaveLog('Attempt to transfer file to FTPServer ' + FTP.Host + ' : ' + ' ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
-          FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName); //нужна проверка целостности отправляемого файла
+          //log.SaveLog('Attempt to transfer file to FTPServer ' + FTP.Host + ' : ' + ' ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
+          FTP.List(ftpfiles, '', False);
+          if ftp.DirectoryListing.Count <> 0 then
+          begin
+            for p := 0 to ftpfiles.Count - 1 do
+            begin
+              if ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName) = -1 then
+              begin
+                FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
+                templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + ', ';
+                Break
+              end else
+              begin
+                //log.SaveLog(Job.GetJob(i).FileList[j].FileName + ' already in server');
+                Continue
+              end;
+            end;
+          end else
+          begin
+            FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
+            templ_str:=templ_str+#10+#13+'[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName; //нужна проверка целостности отправляемого файла
+          end;
+          //FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName); //нужна проверка целостности отправляемого файла
           if FTP.SupportsVerification = true then
           if FTP.VerifyFile(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName) = False then
           begin
@@ -244,16 +295,20 @@ begin
             Result := js_result;
             Exit;
           end;
-          js_result.AddPair('response_code', '0');
-          js_result.AddPair('response_string','[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
-          log.SaveLog('[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
+          //js_result.AddPair('response_code', '0');
+          //js_result.AddPair('response_string','[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
+
+          //log.SaveLog('[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
+
 
 
 
 
         end;
-
+        log.SaveLog(templ_str);
       end;
+
+      js_result.AddPair('response_code', '0')
 
     except on E: Exception do
       begin
