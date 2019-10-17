@@ -272,7 +272,7 @@ begin
               if ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName) = -1 then
               begin
                 FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-                templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + ', ';
+                templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
                 Break
               end else
               begin
@@ -283,7 +283,7 @@ begin
           end else
           begin
             FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-            templ_str:=templ_str+#10+#13+'[Success] ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName; //нужна проверка целостности отправляемого файла
+            templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; '; //нужна проверка целостности отправляемого файла
           end;
           //FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName); //нужна проверка целостности отправляемого файла
           if FTP.SupportsVerification = true then
