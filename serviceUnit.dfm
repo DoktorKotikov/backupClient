@@ -1,7 +1,7 @@
-object Service1: TService1
+object BackupAgent: TBackupAgent
   OldCreateOrder = False
   OnCreate = ServiceCreate
-  DisplayName = 'Service1'
+  DisplayName = 'BackupAgent'
   OnExecute = ServiceExecute
   Height = 150
   Width = 215

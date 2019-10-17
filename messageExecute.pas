@@ -308,7 +308,7 @@ begin
         log.SaveLog(templ_str);
       end;
 
-      js_result.AddPair('response_code', '0')
+      js_result.AddPair('response_code', '0')//мб по одной строчке ответа на один файл
 
     except on E: Exception do
       begin

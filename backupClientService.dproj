@@ -147,7 +147,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="serviceUnit.pas">
-            <Form>Service1</Form>
+            <Form>BackupAgent</Form>
             <FormType>dfm</FormType>
             <DesignClass>TService</DesignClass>
         </DCCReference>

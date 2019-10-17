@@ -2,7 +2,7 @@ program backupClientService;
 
 uses
   Vcl.SvcMgr,
-  serviceUnit in 'serviceUnit.pas' {Service1: TService},
+  serviceUnit in 'serviceUnit.pas' {BackupAgent: TService},
   AWSUnit in 'AWSUnit.pas',
   filesUnit in 'filesUnit.pas',
   functionsUnit in 'functionsUnit.pas',
@@ -29,7 +29,7 @@ begin
   //
   if not Application.DelayInitialize or Application.Installing then
     Application.Initialize;
-  Application.CreateForm(TService1, Service1);
+  Application.CreateForm(TBackupAgent, BackupAgent);
   Application.CreateForm(TDataModule1, DataModule1);
   Application.Run;
 end.

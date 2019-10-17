@@ -23,7 +23,10 @@ begin
     { TODO -oUser -cConsole Main : Insert code here }
   except
     on E: Exception do
+    begin
       Writeln(E.ClassName, ': ', E.Message);
+      sleep(10000);
+    end;
   end;
 
 end.

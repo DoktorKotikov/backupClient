@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.SvcMgr, Vcl.Dialogs, mainUnit;
 
 type
-  TService1 = class(TService)
+  TBackupAgent = class(TService)
     procedure ServiceCreate(Sender: TObject);
     procedure ServiceExecute(Sender: TService);
   private
@@ -17,7 +17,7 @@ type
   end;
 
 var
-  Service1: TService1;
+  BackupAgent: TBackupAgent;
 
 implementation
 
@@ -25,20 +25,20 @@ implementation
 
 procedure ServiceController(CtrlCode: DWord); stdcall;
 begin
-  Service1.Controller(CtrlCode);
+  BackupAgent.Controller(CtrlCode);
 end;
 
-function TService1.GetServiceController: TServiceController;
+function TBackupAgent.GetServiceController: TServiceController;
 begin
   Result := ServiceController;
 end;
 
-procedure TService1.ServiceCreate(Sender: TObject);
+procedure TBackupAgent.ServiceCreate(Sender: TObject);
 begin
   DataModule1:= TDataModule1.create(nil);
 end;
 
-procedure TService1.ServiceExecute(Sender: TService);
+procedure TBackupAgent.ServiceExecute(Sender: TService);
 begin
   While terminated = false  do
   begin
