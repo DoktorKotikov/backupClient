@@ -54,52 +54,63 @@ var
   test : TNewMessage;
 begin
   //TCPClient    := TIdTCPClient.Create;
-  terminatedAll := False;
-  ini := TConfigs.Create('config.ini');
-  log := TLogsSaveClasses.Create();
-  secretKey := ini.GetValue('socket', 'key').AsString;
-  nameClient := ini.GetValue_OrSetDefoult('socket', 'name', 'testClient').AsString;
+  try
+    log := TLogsSaveClasses.Create();
+    log.SaveLog('Start');
+
+    terminatedAll := False;
+    ini := TConfigs.Create('config.ini');
+    secretKey := ini.GetValue_OrSetDefoult('socket', 'key', 'socketkey').AsString;
+    nameClient := ini.GetValue_OrSetDefoult('socket', 'name', 'testClient').AsString;
 
 
-  TCPClient.Host := ini.GetValue_OrSetDefoult('socket', 'ip', '127.0.0.1').AsString;//записываем хост клиента
-  TCPClient.Port := ini.GetValue_OrSetDefoult('socket', 'port', '80').AsInteger;//записываем порт клиента
-  trycoun := 0; //определ€ем счетчик подкючений как ноль
-  TCPClient.Connect;//коннектимс€ к серверу
- // Sleep(3000);
-  repeat//выполне€м пока соединение открыто
-//    if TCPClient.Connected = false then TCPClient.Connect;
-  //  Sleep(1000);//спим
+    TCPClient.Host := ini.GetValue_OrSetDefoult('socket', 'ip', '127.0.0.1').AsString;//записываем хост клиента
+    TCPClient.Port := ini.GetValue_OrSetDefoult('socket', 'port', '80').AsInteger;//записываем порт клиента
+    trycoun := 0; //определ€ем счетчик подкючений как ноль
+    log.SaveLog('try connect to server ' + TCPClient.Host);
+    TCPClient.Connect;//коннектимс€ к серверу
+   // Sleep(3000);
+    repeat//выполне€м пока соединение открыто
+  //    if TCPClient.Connected = false then TCPClient.Connect;
+    //  Sleep(1000);//спим
 
-    msg := TCPClient.Socket.ReadLn(#10, 5000);
+      msg := TCPClient.Socket.ReadLn(#10, 5000);
 
-    //определ€ем msg как одну прин€тую строку
-    if msg <> '' then
-    begin
-      test := TNewMessage.Create(msg, TCPClient);
-   {   resultCode := newMessage(msg); //если строка ответа не пуста€, то выполн€ем функцию newMessage
-      try
-        jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
-        JS := nil;
-
+      //определ€ем msg как одну прин€тую строку
+      if msg <> '' then
+      begin
+        test := TNewMessage.Create(msg, TCPClient);
+     {   resultCode := newMessage(msg); //если строка ответа не пуста€, то выполн€ем функцию newMessage
         try
-          //JS := TJSONObject.Create;//  ParseJSONValue(msgForJson) as TJSONObject;
-          //if jsparse.TryGetValue('action', action) then JS.AddPair('action', action);
-          //if jsparse.TryGetValue('jobId', jobId) then JS.AddPair('jobId', 'jobResult');
-          //JS.AddPair('result', TJSONNumber.Create(resultCode));
-          //JS.AddPair('msg', msg);
+          jsparse := TJSONObject.ParseJSONValue(msg) as TJSONObject;
+          JS := nil;
 
-          //log.SaveLog(JS.ToJSON);
-          TCPClient.Socket.WriteLn(resultCode);
+          try
+            //JS := TJSONObject.Create;//  ParseJSONValue(msgForJson) as TJSONObject;
+            //if jsparse.TryGetValue('action', action) then JS.AddPair('action', action);
+            //if jsparse.TryGetValue('jobId', jobId) then JS.AddPair('jobId', 'jobResult');
+            //JS.AddPair('result', TJSONNumber.Create(resultCode));
+            //JS.AddPair('msg', msg);
+
+            //log.SaveLog(JS.ToJSON);
+            TCPClient.Socket.WriteLn(resultCode);
+          finally
+            if JS <> nil then JS.Free;
+          end;
         finally
-          if JS <> nil then JS.Free;
+          jsparse.free;
         end;
-      finally
-        jsparse.free;
+               }
       end;
-             }
-    end;
 
-  until terminatedAll;
+    until terminatedAll;
+
+  except on E: Exception do
+    begin
+      log.SaveLog('Start error ' + e.Message);
+      raise;
+    end;
+  end;
 
   TCPClient.Disconnect;
     //чистим клиента
