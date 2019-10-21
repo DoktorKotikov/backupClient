@@ -124,7 +124,7 @@ begin
     end;
   end;
 
-  TCPClient.Disconnect;
+ // TCPClient.Disconnect;
     //чистим клиента
 end;
 

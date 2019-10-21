@@ -210,6 +210,9 @@ var
 
   templ_str : string;
   ftpfiles : TStringList;
+
+  FileStr : tfilestream;
+  sizefile : Int64;
 begin
   FTP := nil;
   js_result := nil;
@@ -263,22 +266,31 @@ begin
               end;
             end;
           end;
+
           //log.SaveLog('Attempt to transfer file to FTPServer ' + FTP.Host + ' : ' + ' ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName);
           FTP.List(ftpfiles, '', False);
           if ftp.DirectoryListing.Count <> 0 then
           begin
             for p := 0 to ftpfiles.Count - 1 do
+            //log.SaveLog(ftpfiles[p]);
             begin
-              if ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName) = -1 then
+              if ((ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName)) <> -1) and (ftpfiles[p]=(Job.GetJob(i).FileList[j].FileName)) then
               begin
-                FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-                templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
-                Break
-              end else
-              begin
-                //log.SaveLog(Job.GetJob(i).FileList[j].FileName + ' already in server');
-                Continue
+                //if ftpfiles[p]=(Job.GetJob(i).FileList[j].FileName) then
+                FileStr := TFileStream.Create(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, fmOpenRead);
+                sizefile := FileStr.Size;
+                FileStr.Free;
+                if FTP.Size(ftpfiles[p]) <> sizefile then
+                begin
+                  FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
+                  templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
+                end;
               end;
+            end;
+            if ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName) = -1 then
+            begin
+              FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
+              templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
             end;
           end else
           begin
@@ -355,11 +367,14 @@ var
   FTP_Port, FTP_DataPort : Integer;
 
   js_Result : TJSONObject;
+
+  agentName : string;
 begin
  // Result := TJSONObject.Create;
   js_result := nil;
   Job := TAllJobs.Create;
   js_Result := TJSONObject.Create;
+  agentName := ini.GetValue_OrSetDefoult('agent', 'name', 'agentName').AsString;
 
 // {"action":"newJob", "sendto":"server", "job":[{"dir":"c123123", "Pattern":"ddd*","dirout":"(1)jhgjj(2).zip","archivate":"true"},{"dir":"c123123", "Pattern":"ddd*","dirout":"(1)jhgjj(2).zip","archivate":"false"},{"dir":"c123123", "Pattern":"ddd*","dirout":"(1)jhgjj(2).zip","archivate":"false"}]}
 
@@ -393,11 +408,12 @@ begin
       if RegExpReslt.Success = true then
       begin
         dirout_temp := dirout;
+        dirout_temp := StringReplace(dirout_temp, '[agentName]', agentName, [rfReplaceAll]);
         for k := 1 to RegExpReslt.Groups.Count-1 do
         begin
           dirout_temp := StringReplace(dirout_temp, '($'+k.ToString+')', RegExpReslt.Groups.Item[k].Value, [rfReplaceAll]);
-
         end;
+
         Job.AddNewFile(dir, filesList[j], dirout_temp, archivate_bool);
       end;
     end;
