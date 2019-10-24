@@ -325,8 +325,8 @@ begin
     except on E: Exception do
       begin
         js_result.AddPair('response_code', '2');
-        js_result.AddPair('response_string', '[Error] Problem with data for authorization to FTPServer ' + FTP.Host + ' : ' + E.Message);
-        log.SaveLog('[Error] Problem with data for authorization to FTPServer ' + FTP.Host + ' : ' + E.Message);
+        js_result.AddPair('response_string', '[Error] Problem with FTPServer ' + FTP.Host + ' : ' + E.Message);
+        log.SaveLog('[Error] Problem with FTPServer ' + FTP.Host + ' : ' + E.Message);
 
       end;
     end;
@@ -396,27 +396,34 @@ begin
       archivate_bool := false;
     end;
 
-    if JSArr.Items[i].TryGetValue('dir', dir)
-      and JSArr.Items[i].TryGetValue('Pattern', Pattern)
-      and JSArr.Items[i].TryGetValue('dirout', dirout) then
+    if JSArr.Items[i].TryGetValue('dir', dir) and JSArr.Items[i].TryGetValue('dirout', dirout)
+     and JSArr.Items[i].TryGetValue('Pattern', Pattern) then
     begin
-    RegExp:= TRegEx.Create(Pattern);
-    filesList := foundFiles(dir);
-    for j := filesList.Count-1 downto 0 do
-    begin
-      RegExpReslt := RegExp.Match(filesList[j]);
-      if RegExpReslt.Success = true then
+      if Pattern <> '' then
       begin
-        dirout_temp := dirout;
-        dirout_temp := StringReplace(dirout_temp, '[agentName]', agentName, [rfReplaceAll]);
-        for k := 1 to RegExpReslt.Groups.Count-1 do
+      RegExp:= TRegEx.Create(Pattern);
+      filesList := foundFiles(dir);
+      for j := filesList.Count-1 downto 0 do
+      begin
+        RegExpReslt := RegExp.Match(filesList[j]);
+        if RegExpReslt.Success = true then
         begin
-          dirout_temp := StringReplace(dirout_temp, '($'+k.ToString+')', RegExpReslt.Groups.Item[k].Value, [rfReplaceAll]);
+          dirout_temp := dirout;
+          dirout_temp := StringReplace(dirout_temp, '[agentName]', agentName, [rfReplaceAll]);
+          begin
+            for k := 1 to RegExpReslt.Groups.Count-1 do
+            begin
+              dirout_temp := StringReplace(dirout_temp, '($'+k.ToString+')', RegExpReslt.Groups.Item[k].Value, [rfReplaceAll]);
+            end;
+            Job.AddNewFile(dir, filesList[j], dirout_temp, archivate_bool);
+          end;
         end;
-
+      end;
+      end else
+      begin
+        {папки не берет}
         Job.AddNewFile(dir, filesList[j], dirout_temp, archivate_bool);
       end;
-    end;
     end else
     begin
       log.savelog('[Error] Problem with function newJob : <dir> or <pattern> section not found');
