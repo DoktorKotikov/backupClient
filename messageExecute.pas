@@ -10,6 +10,15 @@ uses varsUnit, System.Classes, System.JSON, System.sysutils,
 function newMessage(msg : string) : string;
 
 type
+  TPing = class(TThread)
+    private
+      fftp : TIdFTP;
+      ping : Boolean;
+    public
+      constructor Create(ftp : TIdFTP);
+    protected
+      procedure Execute; override;
+  end;
 
   TNewMessage = class(TThread)
     public
@@ -22,6 +31,27 @@ type
 
 
 implementation
+
+constructor TPing.Create(ftp : TIdFTP);
+begin
+  inherited Create(false);
+  fftp := ftp
+
+end;
+
+procedure TPing.Execute;
+begin
+  repeat
+    try
+      fftp.Noop;
+      ping := True;
+    except
+      ping := False;
+    end;
+    Sleep(60000);
+  until Terminated;
+end;
+
 
 
 constructor TNewMessage.Create(msg : string; TCPClient: TIdTCPClient);
@@ -213,8 +243,10 @@ var
 
   FileStr : tfilestream;
   sizefile : Int64;
+  pingFtp : TPing;
 begin
   FTP := nil;
+  pingFtp := nil;
   js_result := nil;
   result := nil;
   result:=TJSONObject.Create;
@@ -229,7 +261,7 @@ begin
       FTP.DataPort:=Job.SendConfig.DataPort;
       FTP.Username := Job.SendConfig.Username;
       FTP.Password := Job.SendConfig.Password;
-
+      //pingFtp := TPing.Create(FTP);
       count := Job.GetCount();
       for I := 0 to count-1 do
       begin
@@ -245,6 +277,14 @@ begin
             FTP.Connect;
             FTP.Login;
             FTP.Passive := True;
+            FTP.NATKeepAlive.UseKeepAlive := True;
+            FTP.NATKeepAlive.IdleTimeMS := 10000;
+            FTP.NATKeepAlive.IntervalMS := 1000;
+            //FTP.Noop;
+            FTP.ReadTimeout := INFINITE;
+            FTP.TransferTimeout := INFINITE;
+           // FTP.CheckForGracefulDisconnect();
+
             log.SaveLog('[Success] Connecting to FTPServer : ' + FTP.Host);
           except;
             log.SaveLog('[Error] Connecting to FTPServer : ' + FTP.Host);
@@ -283,20 +323,21 @@ begin
                 if FTP.Size(ftpfiles[p]) <> sizefile then
                 begin
                   FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-                  templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
+                  templ_str:=templ_str+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
                 end;
               end;
             end;
             if ftpfiles.IndexOf(Job.GetJob(i).FileList[j].FileName) = -1 then
             begin
               FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-              templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
+              templ_str:=templ_str+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; ';
             end;
           end else
           begin
             FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName);
-            templ_str:=templ_str+#10+#13+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; '; //нужна проверка целостности отправляемого файла
+            templ_str:=templ_str+'[Success]: ' + Job.GetJob(i).FileList[j].FileDir  +' '+Job.GetJob(i).FileList[j].FileName +' =>> '+ DirOut + Job.GetJob(i).FileList[j].FileName + '; '; //нужна проверка целостности отправляемого файла
           end;
+
           //FTP.Put(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName); //нужна проверка целостности отправляемого файла
           if FTP.SupportsVerification = true then
           if FTP.VerifyFile(Job.GetJob(i).FileList[j].FileDir +'\'+Job.GetJob(i).FileList[j].FileName, '/'+ DirOut + Job.GetJob(i).FileList[j].FileName) = False then
@@ -320,20 +361,24 @@ begin
         log.SaveLog(templ_str);
       end;
 
-      js_result.AddPair('response_code', '0')//мб по одной строчке ответа на один файл
+      js_result.AddPair('response_code', '0');//мб по одной строчке ответа на один файл
 
     except on E: Exception do
       begin
         js_result.AddPair('response_code', '2');
         js_result.AddPair('response_string', '[Error] Problem with FTPServer ' + FTP.Host + ' : ' + E.Message);
         log.SaveLog('[Error] Problem with FTPServer ' + FTP.Host + ' : ' + E.Message);
-
       end;
     end;
 
     Result := js_result;
 
   finally
+    if pingFtp <> nil then
+    begin
+      pingFtp.Terminate;
+    end;
+
     if FTP <> nil then
     begin
       FTP.Disconnect;
